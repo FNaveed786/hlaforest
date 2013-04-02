@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #$ -cwd
-#$ -pe mpi $NUM_THREADS
+#$ -pe mpi 8
 #$ -S /bin/bash
 #$ -v PATH
 

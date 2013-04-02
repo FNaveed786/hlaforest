@@ -15,6 +15,7 @@ GetOptions("2=s"=>\$tier2_file,
     "3=s"=>\$tier3_file, 
     "4=s"=>\$tier4_file, 
     "5=s"=>\$tier5_file, 
+    "t=f"=>\$threshold,
 );
 
 # First read tier 2
