@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #$ -cwd
-#$ -pe mpi 8
+#$ -pe mpi 4
 #$ -S /bin/bash
 #$ -v PATH
 
@@ -23,10 +23,10 @@ mkdir -p $TMP_DIR
 
 sh $SCRIPT_PATH/build-forest-from-fastq.sh $READ_1 $READ_2 $OUT_DIR
 
-$SCRIPT_PATH/prune.pl -f `echo $TMP_DIR/*.forest | tr " " ","` -t 2 > $TMP_DIR/t2.txt
-$SCRIPT_PATH/prune.pl -f `echo $TMP_DIR/*.forestpruned | tr " " ","` -t 3 > $TMP_DIR/t3.txt
-$SCRIPT_PATH/prune.pl -f `echo $TMP_DIR/*.forestprunedpruned | tr " " ","` -t 4 > $TMP_DIR/t4.txt
-$SCRIPT_PATH/prune.pl  -f `echo $TMP_DIR/*.forestprunedprunedpruned | tr " " ","` -t 5 > $TMP_DIR/t5.txt
+$SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forest | tr " " ","` -t 2 > $TMP_DIR/t2.txt
+$SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forestpruned | tr " " ","` -t 3 > $TMP_DIR/t3.txt
+$SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forestprunedpruned | tr " " ","` -t 4 > $TMP_DIR/t4.txt
+$SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forestprunedprunedpruned | tr " " ","` -t 5 > $TMP_DIR/t5.txt
 
-$SCRIPT_PATH/call-haplotypes.pl -2 $TMP_DIR/t2.txt -3 $TMP_DIR/t3.txt -4 $TMP_DIR/t4.txt -5 $TMP_DIR/t5.txt > $OUT_DIR/haplotypes.txt
+$SCRIPT_PATH/call-haplotypes.pl -threshold .3 -2 $TMP_DIR/t2.txt -3 $TMP_DIR/t3.txt -4 $TMP_DIR/t4.txt -5 $TMP_DIR/t5.txt > $OUT_DIR/haplotypes.txt
 
