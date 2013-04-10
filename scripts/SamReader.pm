@@ -107,17 +107,17 @@ sub getNextAlignmentSet {
 #    my $firstAlignmentInSet;
 
     if ( my $firstAlignmentInSet = $self->nextAlignment )  {
-    push(@alignments, $firstAlignmentInSet);
-    while (my $thisAlignment = $self->nextAlignment) {
-        if ($thisAlignment->qname eq $firstAlignmentInSet->qname) {
-            push(@alignments, $thisAlignment);
-        }
-        else {
-            $self->_alignmentBuffer($thisAlignment);
-            last;
+        push(@alignments, $firstAlignmentInSet);
+        while (my $thisAlignment = $self->nextAlignment) {
+            if ($thisAlignment->qname eq $firstAlignmentInSet->qname) {
+                push(@alignments, $thisAlignment);
+            }
+            else {
+                $self->_alignmentBuffer($thisAlignment);
+                last;
+            }
         }
     }
-}
 
     if (scalar @alignments) {
     return \@alignments;

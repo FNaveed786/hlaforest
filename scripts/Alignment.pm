@@ -31,6 +31,19 @@ sub new {
     $self->{SEQ} = shift @samSplit;
     $self->{QUAL} = shift @samSplit;
 
+## This is a minimal set of alignments needed for forest building
+#    $self->{QNAME} = shift @samSplit;
+#    shift @samSplit;
+#    $self->{RNAME} = shift @samSplit;
+#    shift @samSplit;
+#    shift @samSplit;
+#    $self->{CIGAR} = shift @samSplit;
+#    shift @samSplit;
+#    shift @samSplit;
+#    shift @samSplit;
+#    $self->{SEQ} = shift @samSplit;
+#    $self->{QUAL} = shift @samSplit;
+
     foreach my $field (@samSplit) {
         my ($tag, $type, $value) = split /:/, $field;
         $optional{$tag}{TYPE} = $type;
@@ -39,7 +52,7 @@ sub new {
     $self->{OPTIONAL} = \%optional;
 
     $self->{SMMQ} = undef;
-    $self->{WEIGHT} = undef;
+    #$self->{WEIGHT} = undef;
 
     bless($self, $type);
     return ($self);

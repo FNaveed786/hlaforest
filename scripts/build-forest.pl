@@ -6,7 +6,7 @@ use Getopt::Long;
 use HLATree;
 use SamReader;
 use Alignment;
-#use Data::Dumper::Simple;
+#use Data::Dumper;
 use Storable;
 
 my ($refFile, $readFile, $forest_prefix, $verbose, $num_alignments);
@@ -35,7 +35,8 @@ while (my $alignmentPtr = $samReader->getNextAlignmentSet) {
     $readTree->buildTreeFromAlignmentSet($alignmentPtr);
     push (@hlaforest, $readTree);
     $alignmentSetCount++;
-    print "Processed ".$alignmentSetCount."\n" if $verbose;
+#print Dumper(@hlaforest);
+#    print "Processed ".$alignmentSetCount."\n" if $verbose;
 
     if($num_alignments) {
         last if ($alignmentSetCount >= $num_alignments);

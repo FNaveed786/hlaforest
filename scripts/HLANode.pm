@@ -50,6 +50,11 @@ sub alignments {
     return $self->{ALIGNMENTS};
 }
 
+sub delete_alignments {
+    my $self = shift;
+    $self->{ALIGNMENTS} = undef;
+}
+
 
 ### getMinSMMQ returns the minimum SMMQ of all alignments stored within this Node
 sub getMinSMMQ {

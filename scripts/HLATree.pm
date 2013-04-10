@@ -32,7 +32,8 @@ sub buildTreeFromAlignmentSet {
         }
     }
     $self->_distributeSMMQ($self->root);
-    $self->_calculateWeightFromSMMQ($self->root, 1)
+    $self->_calculateWeightFromSMMQ($self->root, 1);
+    $self->clearAllAlignNodes($self->root);
 }
 
 sub addAlignNode {
@@ -42,6 +43,23 @@ sub addAlignNode {
     
     $self->_insertAlignNode($alignment, $self->root, $hlaPtr);
 }
+
+# Removes alignments from children of specified node to minimize file size
+sub clearAllAlignNodes {
+    my $self = shift;
+    my $currentNode = shift;
+
+    my @children = @{$currentNode->children()};
+
+    $currentNode->delete_alignments();
+
+    foreach my $child (@children) {
+        $self->clearAllAlignNodes($child);
+    }
+}
+
+
+
 
 sub _insertAlignNode {
     my $self = shift;
