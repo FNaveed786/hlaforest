@@ -38,7 +38,7 @@ SUBRATE_2=$OUT_PREFIX\2\_sub_rate.tab
 $SCRIPT_PATH/SelectHaplotypes.pl -f $IMGT_REF_FA -minRefLength $MIN_REF_LENGTH -o $SIM_REF_FA -l $SIM_REF_LOG $GENE_FLAG
 
 # Simulate reads with ART
-/bin/art_illumina -i $SIM_REF_FA -o $OUT_PREFIX  --len $READ_LENGTH --fcov $COVERAGE -sam -p --mflen $FRAG_LENGTH --sdev $FRAG_LENGTH_SD --insRate 0 --delRate 0 --insRate2 0 --delRate2 0 -qs $Q_SHIFT -qs2 $Q_SHIFT
+~/bin/art_illumina -i $SIM_REF_FA -o $OUT_PREFIX  --len $READ_LENGTH --fcov $COVERAGE -sam -p --mflen $FRAG_LENGTH --sdev $FRAG_LENGTH_SD --insRate 0 --delRate 0 --insRate2 0 --delRate2 0 -qs $Q_SHIFT -qs2 $Q_SHIFT
 
 # Get substitution rate of aln files
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_1 > $SUBRATE_1
