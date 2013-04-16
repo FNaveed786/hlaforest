@@ -10,7 +10,7 @@ use Alignment;
 use Storable;
 
 my ($refFile, $readFile, $forest_prefix, $verbose, $num_alignments);
-my $block_size = 10000;
+my $block_size = 1000000;
 
 
 GetOptions ( 
@@ -36,7 +36,7 @@ while (my $alignmentPtr = $samReader->getNextAlignmentSet) {
     push (@hlaforest, $readTree);
     $alignmentSetCount++;
 #print Dumper(@hlaforest);
-#    print "Processed ".$alignmentSetCount."\n" if $verbose;
+    print "Processed ".$alignmentSetCount."\n" if $verbose;
 
     if($num_alignments) {
         last if ($alignmentSetCount >= $num_alignments);

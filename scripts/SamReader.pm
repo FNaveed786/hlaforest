@@ -134,7 +134,8 @@ sub setQual33{
     my ($convertCount, $total, $skipped) = (0, 0, 0);
 
     while (my $alignment = $self->nextAlignment) {
-        my $qualType = $alignment->checkQualType;
+#        my $qualType = $alignment->checkQualType;
+        my $qualType = QUAL33;
         if($qualType == QUAL33) {
             $alignment->print;
         }

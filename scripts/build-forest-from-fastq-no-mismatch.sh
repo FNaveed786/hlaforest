@@ -18,7 +18,7 @@ mkdir -p $TMP_DIR
 
 bowtie -p $NUM_THREADS --al $FILTERED_PREFIX $BOWTIE_INDEX -1 $READ_ONE -2 $READ_TWO > /dev/null
 # Exact match results in less required memory
-bowtie --seedmms 0 --maqerr 1 -p $NUM_THREADS --sam --all $BOWTIE_INDEX -1 $FILTERED_PREFIX\_1 -2 $FILTERED_PREFIX\_2 > $ALIGNED_PAIRS
+bowtie -n 0 -e 1 -p $NUM_THREADS --sam --all $BOWTIE_INDEX -1 $FILTERED_PREFIX\_1 -2 $FILTERED_PREFIX\_2 > $ALIGNED_PAIRS
 
 # Build the forest from the sam alignment
-$SCRIPT_PATH/build-forest.pl -reads $ALIGNED_PAIRS -o $FOREST_PAIRS -verbose -n $TREES_IN_FOREST
+$SCRIPT_PATH/build-forest.pl -reads $ALIGNED_PAIRS -o $FOREST_PAIRS -b $TREES_IN_FOREST $MAX_TREES_FLAG

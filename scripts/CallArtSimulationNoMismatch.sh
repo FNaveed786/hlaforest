@@ -45,7 +45,7 @@ perl $SCRIPT_PATH/aln2subrate.pl < $ALN_1 > $SUBRATE_1
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_2 > $SUBRATE_2
 
 # Call haplotypes with existing script
-$SCRIPT_PATH/CallHaplotypesPE.sh $OUT_DIR $SIM_1 $SIM_2
+$SCRIPT_PATH/CallHaplotypesPENoMismatch.sh $OUT_DIR $SIM_1 $SIM_2
 
 # Score the called haplotypes with the true haplotypes
 perl $SCRIPT_PATH/score-sim-call.pl -t $OUT_DIR/sim_chosen_haplotypes.txt -p $OUT_DIR/haplotypes.txt > $OUT_DIR/sim-score.txt

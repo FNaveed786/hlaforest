@@ -26,6 +26,8 @@ SIM_REF_FA=$OUT_DIR/ref.fa
 SIM_REF_LOG=$OUT_DIR/sim_chosen_haplotypes.txt
 SIM_1=$OUT_PREFIX\1.fq
 SIM_2=$OUT_PREFIX\2.fq
+CORRECTED_SIM_1=$OUT_PREFIX\1_corrected.fq
+CORRECTED_SIM_2=$OUT_PREFIX\2_corrected.fq
 ALN_1=$OUT_PREFIX\1.aln
 ALN_2=$OUT_PREFIX\2.aln
 TMP_DIR=$OUT_DIR/tmp
@@ -46,7 +48,20 @@ $SCRIPT_PATH/SelectHaplotypes.pl -f $IMGT_REF_FA -minRefLength $MIN_REF_LENGTH -
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_1 > $SUBRATE_1
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_2 > $SUBRATE_2
 
+# Adjust quality values
+#perl $SCRIPT_PATH/fastqShiftQuals.pl -a -$Q_SHIFT < $SIM_1 > $CORRECTED_SIM_1
+#perl $SCRIPT_PATH/fastqShiftQuals.pl -a -$Q_SHIFT < $SIM_2 > $CORRECTED_SIM_2
+
+# Test various qual shifts
+#perl $SCRIPT_PATH/fastqShiftQuals.pl -a $((-Q_SHIFT + 6)) < $SIM_1 > $CORRECTED_SIM_1
+#perl $SCRIPT_PATH/fastqShiftQuals.pl -a $((-Q_SHIFT + 6)) < $SIM_2 > $CORRECTED_SIM_2
+
+# Test with quality ceiling
+#perl $SCRIPT_PATH/fastqQualsCeiling.pl -m 40 < $SIM_1 > $CORRECTED_SIM_1
+#perl $SCRIPT_PATH/fastqQualsCeiling.pl -m 40 < $SIM_2 > $CORRECTED_SIM_2
+
 # Call haplotypes with existing script
+# $SCRIPT_PATH/CallHaplotypesPE.sh $OUT_DIR $CORRECTED_SIM_1 $CORRECTED_SIM_2
 $SCRIPT_PATH/CallHaplotypesPE.sh $OUT_DIR $SIM_1 $SIM_2
 
 # Score the called haplotypes with the true haplotypes
