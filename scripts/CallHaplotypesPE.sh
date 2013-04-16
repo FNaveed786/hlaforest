@@ -21,7 +21,7 @@ TMP_DIR=$OUT_DIR/tmp
 
 mkdir -p $TMP_DIR
 
-#sh $SCRIPT_PATH/build-forest-from-fastq.sh $READ_1 $READ_2 $OUT_DIR
+sh $SCRIPT_PATH/build-forest-from-fastq.sh $READ_1 $READ_2 $OUT_DIR
 
 $SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forest | tr " " ","` -t 2 > $TMP_DIR/t2.txt
 $SCRIPT_PATH/prune2.pl -threshold 0.05 -f `echo $TMP_DIR/*.forestpruned | tr " " ","` -t 3 > $TMP_DIR/t3.txt

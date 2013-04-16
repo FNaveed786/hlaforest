@@ -723,7 +723,7 @@ sub multi_prune_2 {
     my $self = shift;
     my $gene_families_ptr = shift;
 
-    my @families_in_tree;
+#    my @families_in_tree;
     my %weights; # stores the weights of top nodes indexed by hlaid
     my @max_hla_ids;
     my $max = 0;
@@ -734,13 +734,14 @@ sub multi_prune_2 {
         shift @hla_id_split;
 
         if ($self->node_exists($self->root, \@hla_id_split)) {
-            push @families_in_tree, $hla_id;
+#            push @families_in_tree, $hla_id;
             $weights{$hla_id} = $self->get_weight_by_hla_id($self->root, \@hla_id_split);
         }
     }
 
     # Find the weights of highest scoring nodes
-    if (scalar @families_in_tree) {
+#    if (scalar @families_in_tree) {
+    if (scalar keys %weights) {
         # Sort nodes by their weight in descending value
         foreach my $hla_id (sort {$weights{$b} <=> $weights{$a}} keys %weights) {
             if ($weights{$hla_id} > $max) {
