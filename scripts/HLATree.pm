@@ -265,7 +265,7 @@ sub distributeWeightedCoverage {
 # Distribute node weights
 
 #print "DEBUG in HLATree.pm distributeWeightedCoverage: calling _distributeNodeWeight with the the ref node ". $refTree->root->lineage. " and the Read node ". $readTree->root->lineage."\n";
-_distributeNodeWeight($refTree->root, $readTree->root);
+    _distributeNodeWeight($refTree->root, $readTree->root);
 
 # Recurse through the readTree and gather all the alignments and their
 # associated weights
@@ -538,8 +538,8 @@ sub printReadWeightArray{
     my %readWeights= %{$currentNode->readWeights};
     my @currentNodeReadWeightArray = @{$currentNode->readWeightArray};
 
-            print join " ", ($currentNode->lineage), @currentNodeReadWeightArray;
-            print "\n";
+    print join " ", ($currentNode->lineage), @currentNodeReadWeightArray;
+    print "\n";
 
     if (keys %readWeights) {
         foreach my $covName (keys %readWeights) {
@@ -595,7 +595,7 @@ sub get_nodes_in_tier{
     my $currentNode = shift;
     my $tier = shift;
     my @nodes;
-    
+
 
     if ($tier == 0) {
         push @nodes, $currentNode;
@@ -675,7 +675,7 @@ sub prune{
 #            print STDERR "Found $childId, continuing traversal\n";
                 $self->prune($child, $hla_id_split);
             }
-       }
+        }
     }
 }
 
@@ -724,19 +724,42 @@ sub multi_prune_2 {
     my $gene_families_ptr = shift;
 
     my @families_in_tree;
+    my %weights; # stores the weights of top nodes indexed by hlaid
+    my @max_hla_ids;
+    my $max = 0;
 
+    # This basically determines which level to prune and stores the top nodes determined by the sum of weights for a reference
     foreach my $hla_id (keys %$gene_families_ptr) {
         my @hla_id_split = split /:/, $hla_id;
         shift @hla_id_split;
 
         if ($self->node_exists($self->root, \@hla_id_split)) {
             push @families_in_tree, $hla_id;
+            $weights{$hla_id} = $self->get_weight_by_hla_id($self->root, \@hla_id_split);
         }
     }
 
-    # pick a random node around which to prune
+    # Find the weights of highest scoring nodes
     if (scalar @families_in_tree) {
-        my $keeper = $families_in_tree[int(rand(scalar @families_in_tree))];
+        # Sort nodes by their weight in descending value
+        foreach my $hla_id (sort {$weights{$b} <=> $weights{$a}} keys %weights) {
+            if ($weights{$hla_id} > $max) {
+                $max = $weights{$hla_id};
+                push @max_hla_ids, $hla_id;
+            }
+            elsif ($weights{$hla_id} == $max) {
+                push @max_hla_ids, $hla_id;
+            }
+            else {
+                last;
+            }
+        }
+    }
+
+    # If there are multiple nodes with the same weight, pick one randomly
+    if (scalar @max_hla_ids) {
+#        my $keeper = $families_in_tree[int(rand(scalar @families_in_tree))];
+        my $keeper = $max_hla_ids[int(rand(scalar @max_hla_ids))];
         my @hla_id_split = split /:/, $keeper;
         shift @hla_id_split;
         $self->prune($self->root, \@hla_id_split);
@@ -774,5 +797,28 @@ sub node_exists {
         return 1;
     }
 }
+
+# Given a split array of an hla_id, returns the weight of the node
+sub get_weight_by_hla_id {
+    my $self = shift;
+    my $current_node = shift;
+    my $hla_id_ptr = shift;
+
+#    print STDERR "looking for @$hla_id_ptr in " . $current_node->lineage."\n";
+    if (scalar @$hla_id_ptr) {
+        $childId = shift @$hla_id_ptr;
+        if (my $child = $current_node->getChild($childId)) {
+            return($self->node_exists($child, $hla_id_ptr));
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        return $current_node->weight;
+    }
+}
+
+
 
 return(1);

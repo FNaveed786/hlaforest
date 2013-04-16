@@ -62,6 +62,8 @@ sub pick_children {
 # Save trees into one of those three groups
 # Output statistics for all children including: unique evidence, unpruned evidence, pruned evidence
     my ($repruned_weight_hash_ptr) = prune2_and_get_weights($forest_files_ptr, $top_children_hash_ptr, $tier);
+
+    # Prints the reweighted evidence at this tier
     print_hash_ptr($repruned_weight_hash_ptr);
 }
 
@@ -267,7 +269,9 @@ sub get_top_2_children{
     return \%top_gene_families;
 }
 
-# 
+# This method is used for the final pruning and assigns prunes a read tree according to the top
+# two selected haplotypes. This should assign a read tree to the node with the highest weigh, rather
+# than on a first come first serve basis
 sub prune2_and_get_weights {
     my $forest_files_ptr = shift;
     my $top_nodes_hash_ptr = shift;;
@@ -279,9 +283,13 @@ sub prune2_and_get_weights {
 
 
     my $nonconforming_tree_count = 0;
+    # Loops through all the unpruned trees
     foreach my $forest_file ( @forest_files ) {
+        # Reads in the trees
         my $hla_forest_ptr = eval { retrieve( $forest_file ) };
+        # Place to store happy trees
         my @pruned_trees;
+        # Place to store unloved and forgotten trees
         my @non_conformist_trees;
 
         foreach my $hla_tree (@{$hla_forest_ptr}) {
