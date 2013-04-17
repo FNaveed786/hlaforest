@@ -5,6 +5,8 @@ use strict;
 use HLATree;
 use Storable;
 use Getopt::Long;
+#use Object::Destroyer;
+use Devel::Cycle;
 
 
 my @forest_files;
@@ -231,6 +233,7 @@ sub prune {
         my $hla_forest_ptr = eval { retrieve( $forest_file ) };
 
         foreach my $hla_tree (@{$hla_forest_ptr}) {
+#            my $sentry = Object::Destroyer->new(sub {undef $hla_tree});
             print "New tree\n" if $debug;
             $hla_tree->prune_keep_only_given($ordered_lineages_ptr, $debug);
             $hla_tree->_calculateWeightFromSMMQ($hla_tree->root, 1);
@@ -245,7 +248,9 @@ sub prune {
                     print $node->id . "did not have a weight\n" if $debug;
                 }
             }
+            find_cycle($hla_tree);
         }
+
     }
     return \%prune_weights;
 }

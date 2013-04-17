@@ -10,10 +10,13 @@ sub new {
     my $self = {};
     my $root = HLANode->new();
 
+
     $self->{ROOT} = $root;
     $root->{ID}="ROOT";
+    
 
     bless ($self, $type);
+#    weaken($self->{ROOT});
     return $self;
 }
 

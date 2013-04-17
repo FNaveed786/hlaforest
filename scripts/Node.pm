@@ -3,6 +3,7 @@
 # to parent and an array of pointers to
 # children
 package Node;
+use Scalar::Util 'weaken';
 
 sub new {
     my $type = shift;
@@ -21,6 +22,7 @@ sub respond {
 sub parent {
     my $self = shift;
     if (@_) {$self->{PARENT} = shift}
+    weaken($self->{PARENT});
     return $self->{PARENT};
 }
 
