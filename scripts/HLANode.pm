@@ -76,6 +76,32 @@ sub getMinSMMQ {
     }
 }
 
+### getSMMQSum returns the sum of all SMMQs of the alignments stored within this Node
+sub getSMMQSum {
+    my $self = shift;
+    my @alignments = @{$self->alignments};
+    my $minSMMQ;
+    if (scalar(@alignments) > 2) {
+        print STDERR "An alignment should not align to the same reference sequence twice\n";
+        exit(0);
+    }
+    if (scalar(@alignments)) {
+        my $SMMQ_sum = 0;
+        foreach (@alignments) {
+            my $thisSMMQ = $_->smmq;
+            $SMMQ_sum += $thisSMMQ;
+        }
+#print "DEBUG in HLANode.pm getMinSMMQ: Found smmq of $minSMMQ for node ".$self->id."\n";
+        return $SMMQ_sum;
+    }
+    else {
+#        print STDERR "ERROR in HLANode.pm: Attempting to get SMMQ values of node ".$self->id.", but it has no associated Alignments.\n";
+        return INFINITY;
+    }
+}
+
+
+
 ### weight returns a hash pointer to all the weightuences
 sub weight {
     my $self = shift;
@@ -354,11 +380,18 @@ sub removeChild {
     if (@_) {
         my $child_id_to_remove = shift;
         my $childrenPtr = $self->{CHILDREN};
-        for (my $i = 0; $i < scalar(@{$childrenPtr}); $i++) {
-            if ($chidrenPtr->[$i]->id eq $child_id_to_remove) {
-                delete $childrenPtr->[$i];
+#        for (my $i = 0; $i < scalar(@{$childrenPtr}); $i++) {
+#            if ($chidrenPtr->[$i]->id eq $child_id_to_remove) {
+#                delete $childrenPtr->[$i];
+#            }
+#        }
+        my @newChildren;
+        foreach my $child (@$childrenPtr) {
+            unless ($child->id eq $child_id_to_remove) {
+                push @newChildren, $child;
             }
         }
+        $self->{CHILDREN} = \@newChildren;
     }
     else {
         print STDERR "ERROR: removeChild called in Node.pm without an argument\n";
@@ -385,6 +418,23 @@ sub removeAllButChild {
         print STDERR "ERROR: removeChild called in Node.pm without an argument\n";
     }
 }
+# Given an array of ids, remove all but those children
+sub removeAllButChildren {
+    my $self = shift;
+    if (@_) {
+        my $children_ids_to_keep_ptr = shift;
+        my @children_ids_to_keep = @{$children_ids_to_keep_ptr};
+        my @newChildren;
+        foreach my $child_id_to_keep (@children_ids_to_keep) {
+            push @newChildren, $self->getChild($child_id_to_keep);
+        }
+        $self->{CHILDREN} = \@newChildren;
+    }
+    else {
+        print STDERR "ERROR: removeChildren called in Node.pm without an argument\n";
+    }
+}
+
 
 
 

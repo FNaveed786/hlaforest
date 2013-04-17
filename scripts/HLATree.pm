@@ -122,7 +122,8 @@ sub _distributeSMMQ {
     }
 # If there are no children, set node->smmq to min of all alignment smmqs
     else {
-        $currentNode->smmq($currentNode->getMinSMMQ);
+        #$currentNode->smmq($currentNode->getMinSMMQ);
+        $currentNode->smmq($currentNode->getSMMQSum);
         return $currentNode->smmq;
     }
 }
@@ -679,6 +680,74 @@ sub prune{
     }
 }
 
+# prune_keep_only_given
+# Given an array of node nodes, keep only nodes that are specified in the list
+sub prune_keep_only_given {
+    my $self = shift;
+    my $hla_ids_ptr = shift;
+    my $debug = shift;
+    my @hla_ids_split_array;
+    my $max_tier = 0;
+
+    # Parse the node names we want to keep
+    foreach my $hla_id (@$hla_ids_ptr) {
+        my @hla_id_split = split /:/, $hla_id;
+#        shift @hla_id_split;
+        push @hla_ids_split_array, \@hla_id_split;
+        # get the deepest tier of the HLA_ids
+        $max_tier = scalar(@hla_id_split) if (scalar(@hla_id_split) > $max_tier);
+    }
+
+    for (my $tier = 1; $tier < $max_tier; $tier++) {
+        # Get all nodes in this tier
+        my $nodes_in_tier_ptr = $self->get_nodes_in_tier($self->root, $tier);
+
+        my %keeper_hash;
+        my %deletors;
+
+        print "There are " . scalar(@$nodes_in_tier_ptr) ." one nodes in tier $tier\n" if $debug;
+        foreach my $node (@$nodes_in_tier_ptr) {
+            my $node_lineage = $node->lineage;
+            foreach my $keeper (@$hla_ids_ptr) {
+                #my $keeper_lineage = $keeper->lineage;
+                my $keeper_lineage = $keeper;
+        # Check if the node is in the list of specified nodes to keep
+        # do this by looping through and doing a regex on lineage
+                if ($keeper =~ /\Q$node_lineage/) {
+                    # Here if an alignment is found to a top node, prune all non keeper edges
+                    $keeper_hash{$node->lineage} = $node;
+#                    @deletors = ();
+                    print "Found a keeper! \t tree:" if $debug;
+                    print $node->lineage. " keeper:". $keeper . "\n" if $debug;
+                    last;
+                }
+                else {
+                    #push @deletors, $node;
+                    $deletors{$node->lineage} = $node;
+                    print "Just another bum\t tree:" if $debug;
+                    print $node->lineage. " keeper:". $keeper . "\n" if $debug;
+                }
+            }
+#            unless ($keep_node) {
+#                print "trying to remove" . $node->lineage." " . $node->id."\n";
+#                $node->parent()->removeChild($node->id);
+#            }
+        }
+        # Only prune the tree if there's one of its nodes is a keeper
+        if (keys %keeper_hash) {
+#            foreach my $node(@deletors) {
+            while (my ($lineage, $node) = each %deletors) {
+                unless (exists $keeper_hash{$lineage}) {
+                    print "trying to remove" . $lineage." " . $node->id."\n" if $debug;
+                    $node->parent()->removeChild($node->id);
+                }
+            }
+        }
+    }
+}
+
+
+
 # multi_prune
 # Given an array of node names, prune off the branches that don't contains 
 # one of the node names and recalculate read weights. This prunes reference
@@ -706,7 +775,7 @@ sub multi_prune {
     }
 }
 
-# multi_prune
+# multi_prune_2
 # Given an array of node names, prune off the branches that don't contains 
 # one of the node names and recalculate read weights.
 # If multiple selected references are found in a read tree, then reads are
