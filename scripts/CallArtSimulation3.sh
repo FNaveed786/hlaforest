@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #$ -cwd
-#$ -pe mpi 4
+#$ -pe mpi 1
 #$ -S /bin/bash
 #$ -v PATH
 
@@ -48,20 +48,7 @@ $SCRIPT_PATH/SelectHaplotypes.pl -f $IMGT_REF_FA -minRefLength $MIN_REF_LENGTH -
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_1 > $SUBRATE_1
 perl $SCRIPT_PATH/aln2subrate.pl < $ALN_2 > $SUBRATE_2
 
-# Adjust quality values
-#perl $SCRIPT_PATH/fastqShiftQuals.pl -a -$Q_SHIFT < $SIM_1 > $CORRECTED_SIM_1
-#perl $SCRIPT_PATH/fastqShiftQuals.pl -a -$Q_SHIFT < $SIM_2 > $CORRECTED_SIM_2
-
-# Test various qual shifts
-#perl $SCRIPT_PATH/fastqShiftQuals.pl -a $((-Q_SHIFT + 6)) < $SIM_1 > $CORRECTED_SIM_1
-#perl $SCRIPT_PATH/fastqShiftQuals.pl -a $((-Q_SHIFT + 6)) < $SIM_2 > $CORRECTED_SIM_2
-
-# Test with quality ceiling
-#perl $SCRIPT_PATH/fastqQualsCeiling.pl -m 40 < $SIM_1 > $CORRECTED_SIM_1
-#perl $SCRIPT_PATH/fastqQualsCeiling.pl -m 40 < $SIM_2 > $CORRECTED_SIM_2
-
 # Call haplotypes with existing script
-# $SCRIPT_PATH/CallHaplotypesPE.sh $OUT_DIR $CORRECTED_SIM_1 $CORRECTED_SIM_2
 $SCRIPT_PATH/CallHaplotypesPE3.sh $OUT_DIR $SIM_1 $SIM_2
 
 # Score the called haplotypes with the true haplotypes

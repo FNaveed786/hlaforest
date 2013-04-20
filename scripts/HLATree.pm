@@ -3,6 +3,7 @@ use HLANode;
 use Bio::SeqIO;
 use SamReader;
 use Alignment;
+use strict;
 use List::Util qw(min sum);
 
 sub new {
@@ -52,7 +53,13 @@ sub clearAllAlignNodes {
     my $self = shift;
     my $currentNode = shift;
 
-    my @children = @{$currentNode->children()};
+    my @children;
+    my $children_ptr = $currentNode->children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
+
+
 
     $currentNode->delete_alignments();
 
@@ -111,8 +118,14 @@ sub _distributeSMMQ {
     my $self = shift;
     my $currentNode = shift;
     my @childrenSMMQ;
+    
+    my @children;
+    my $children_ptr = $currentNode->children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
 
-    if (scalar @{$currentNode->children}) {
+    if (scalar @children) {
         my @smmqs;
         push @smmqs, $currentNode->getMinSMMQ;
 
@@ -138,14 +151,22 @@ sub _calculateWeightFromSMMQ{
     my $currentNode = shift;
     my $totalWeight = shift;
 
-# Get the weights of al the children
-    my @alignments= @{$currentNode->alignments};
-    my @children = @{$currentNode->children};
+# Get the weights of all the children
+    my $alignment_ptr = $currentNode->alignments;
+    my @alignments;
+    if ($alignment_ptr) {
+        @alignments= @$alignment_ptr;
+    }
+    my $children_ptr = $currentNode->children;
+    my @children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
 
 # Convert SMMQ into weights
     my @localProb;
     my @objectPtr; #objectPtr holds pointers to both alignments and nodes
-            
+
 
     foreach my $alignment(@alignments) {
         #$localProb{weight}{$alignment} = 10**(-$alignment->smmq/10);
@@ -257,7 +278,7 @@ sub _extractHLAfromDesc {
     my $readLength = pop @split;
     my $imgtID = shift @split;
     my @hla = @split;
-    return ($readLength, $imgtId, \@hla);
+    return ($readLength, $imgtID, \@hla);
 }
 
 ## distributeWeightedCoverage
@@ -527,7 +548,7 @@ sub printNodeWeights {
     my %readWeights= %{$currentNode->readWeights};
     my @children = @{$currentNode->children};
 
-    print $currentNode->lineage.":$covName\t";
+    print $currentNode->lineage.":\t";
     print $currentNode->weight . "\n";
 
     foreach my $child (@children) {
@@ -608,7 +629,11 @@ sub get_nodes_in_tier{
     }
     elsif($tier > 0) {
         $tier--;
-        my @children = @{$currentNode->children};
+        my $children_ptr = $currentNode->children;
+        my @children;
+        if ($children_ptr) {
+            @children = @$children_ptr;
+        }
         foreach my $child (@children) {
             my @returnable_nodes = @{$self->get_nodes_in_tier($child, $tier)};
 #            print STDERR "got " . scalar(@returnable_nodes) ." from function call\n";
@@ -683,6 +708,237 @@ sub prune{
     }
 }
 
+
+# Given a nested hash, return a single hash where the nested keys are separated by ':'
+sub nested_hash_to_hash {
+    my ($hash, $key_list) = @_;
+    my %returnable;
+    while (my ($k, $v) = each %$hash) {
+        # Keep track of the hierarchy of keys, in case
+        # our callback needs it.
+        push @$key_list, $k;
+
+        if (ref($v) eq 'HASH') {
+            # Recurse.
+            my %tmp_hash = (%returnable, %{nested_hash_to_hash($v, $key_list)});
+            %returnable = %tmp_hash;
+        }
+        else {
+            # Otherwise, invoke our callback, passing it
+            # the current key and value, along with the
+            # full parentage of that key.
+            my $lineage = join (":", @$key_list);
+            $returnable{$lineage} = $v;
+        }
+        pop @$key_list;
+    }
+    return \%returnable;
+}
+
+# Given a list of nodes, traverse the tree and prune the nodes that are not
+# in the keeper list. This subroutine requires a tier to be given
+sub prune_keep_only_keys_to_tier {
+    my $self = shift;
+    my $currentNode = shift;
+    my $tier = shift;
+    my $keeper_lineages_ptr = shift;
+
+    my $lineage = $currentNode->lineage;
+    my $isKeeper;
+
+    # Check if this node is in the lineage of a keeper
+    for my $keeper_lineage (keys %$keeper_lineages_ptr) {
+        if ($keeper_lineage =~ /\Q$lineage/) {
+            $isKeeper++;
+            last;
+        }
+    }
+
+    if ($isKeeper) {
+        # Call it on the children of this node if we haven't gone past the number of tiers to prune
+        if($tier > 0) {
+            $tier--;
+            my @children = @{$currentNode->children};
+            foreach my $child (@children) {
+                $self->prune_keep_only_keys_to_tier($child, $tier, $keeper_lineages_ptr);
+            }
+        }
+    }
+    # If it's not, delete it
+    else {
+#        print "Attempting to delete ".$currentNode->lineage."\n";
+        $currentNode->parent()->removeChild($currentNode->id);
+    }
+}
+
+# prune_side_with_primary
+# Given an array of node nodes, keep only nodes that are specified in the list
+# If multiple nodes are specificed in the list, keep the one with the highest weight
+# if the weights are tied, assign the node the the primary haplotype
+sub prune_side_with_primary {
+    my $self = shift;
+    my $haplotypes_hash_ptr = shift;
+    my $debug = shift;
+    my @hla_ids_split_array;
+    my $max_tier = 0;
+
+    # Get the max tier to prune
+    foreach my $hla_id (keys %$haplotypes_hash_ptr) {
+        my @hla_id_split = split /:/, $hla_id;
+        push @hla_ids_split_array, \@hla_id_split;
+        # get the deepest tier of the HLA_ids
+        $max_tier = scalar(@hla_id_split) if (scalar(@hla_id_split) > $max_tier);
+    }
+
+
+    # get lineages and weights
+
+
+    # Checking if the dominant node is the highest scoring SMMQ
+    my %dominant_lineages = %$haplotypes_hash_ptr;
+
+#    print "Dominant lineages: \n";
+#    foreach my $key (keys %dominant_lineages) {
+#        print "$key\n";
+#    }
+
+    my %smmqs;
+    # Store smmqs of nodes in the tier of dominant haplotypes in a hash
+    foreach my $node(@{$self->get_nodes_in_tier($self->root, $max_tier)}) {
+        $smmqs{$node->lineage}=$node->smmq;
+    }
+    # Order by ascending smmq
+    my @ordered_lineages = sort {$smmqs{$a} <=> $smmqs{$b}} keys %smmqs;
+
+    # Check how many dominant haplotypes are in the min lineage
+    my $min_smmq = $smmqs{$ordered_lineages[0]};
+    my @min_lineages;
+    my %dom_with_min_smmq;
+    foreach my $lineage(@ordered_lineages) {
+#        print "Checking smmq of $lineage smmq: ".$smmqs{$lineage}."\n";
+        if ($smmqs{$lineage} <= $min_smmq) {
+            push @min_lineages, $lineage;
+            # Get parent lineage
+            my @lineage_split = split /:/, $lineage;
+            pop @lineage_split;
+            my $parent_lineage = join ":", @lineage_split;
+            if (exists $dominant_lineages{$parent_lineage}) {
+#                print "Found dominant lineage\n";
+                $dom_with_min_smmq{$lineage}++;
+            }
+        }
+    }
+
+    if (keys %dom_with_min_smmq) {
+        # Keep only edges to dominant nodes
+#        print "Dominant tree. Keeping these edges: \n";
+#        print join "\t", keys(%smmqs), "\n";
+        $self->prune_keep_only_keys_to_tier($self->root, $max_tier, \%dom_with_min_smmq);
+    }
+    else {
+        # Make a new list of lineages to keep
+        foreach my $dominant_lineage (keys %dominant_lineages) {
+#            print "Not keeping this node" . $dominant_lineage."\n";
+            delete $smmqs{$dominant_lineage};
+        }
+        # Remove dominant edges
+#        print "Secondary Tree. Keeping these edges: \n";
+#        print join "\t", keys(%smmqs), "\n";
+        $self->prune_keep_only_keys_to_tier($self->root, $max_tier, \%smmqs);
+    }
+
+
+
+
+
+
+
+}
+
+
+# prune_keep_best
+# Given an array of node nodes, keep only nodes that are specified in the list
+# If multiple nodes are specificed in the list, keep the one with the highest weight
+sub prune_keep_best {
+    my $self = shift;
+    my $hla_ids_ptr = shift;
+    my $debug = shift;
+    my @hla_ids_split_array;
+    my $max_tier = 0;
+
+    # Parse the node names we want to keep
+    foreach my $hla_id (@$hla_ids_ptr) {
+        my @hla_id_split = split /:/, $hla_id;
+#        shift @hla_id_split;
+        push @hla_ids_split_array, \@hla_id_split;
+        # get the deepest tier of the HLA_ids
+        $max_tier = scalar(@hla_id_split) if (scalar(@hla_id_split) > $max_tier);
+    }
+
+    for (my $tier = 1; $tier < $max_tier; $tier++) {
+        # Get all nodes in this tier
+        my $nodes_in_tier_ptr = $self->get_nodes_in_tier($self->root, $tier);
+
+        my %keeper_hash;
+        my %deletors;
+
+        print "There are " . scalar(@$nodes_in_tier_ptr) ." one nodes in tier $tier\n" if $debug;
+        foreach my $node (@$nodes_in_tier_ptr) {
+            my $node_lineage = $node->lineage;
+            foreach my $keeper (@$hla_ids_ptr) {
+                #my $keeper_lineage = $keeper->lineage;
+                my $keeper_lineage = $keeper;
+                # Check if the node is in the list of specified nodes to keep
+                # do this by looping through and doing a regex on lineage
+                if ($keeper =~ /\Q$node_lineage/) {
+                    # Here if an alignment is found to a top node, prune all non keeper edges
+                    $keeper_hash{$node->lineage} = $node->weight;
+#                    @deletors = ();
+                    print "Found a keeper! \t tree:" if $debug;
+                    print $node->lineage. " keeper:". $keeper . "\n" if $debug;
+                    last;
+                }
+                else {
+                    #push @deletors, $node;
+                    $deletors{$node->lineage} = $node;
+                    print "Just another bum\t tree:" if $debug;
+                    print $node->lineage. " keeper:". $keeper . "\n" if $debug;
+                }
+            }
+        }
+        # Only prune the tree if there's one of its nodes is a keeper
+        my $num_keepers_in_tree = keys %keeper_hash;
+        if ($num_keepers_in_tree) {
+            my %best_keepers;
+            # Get the max weight of the keepers
+            my @sorted_keeper_lineages = sort {$keeper_hash{$b} <=> $keeper_hash{$a}} keys %keeper_hash;
+            # If there are more than one keepers of equal weight, delete them too!
+            if($num_keepers_in_tree > 1) {
+#                my $max_lineage = $sorted_keeper_lineage[0];
+#                my $max_value = $keeper_hash{$max_lineage};
+#                while (my $keeper_lineage = shift @sorted_keeper_lineages) {
+#                    last unless ($keeper_hash{$keeper_lineage} >= $max_value);
+#                    $best_keepers{$keeper_lineage}++;
+#                }
+            }
+            elsif ($num_keepers_in_tree == 1) {
+                my $max_lineage = shift @sorted_keeper_lineages;
+                $best_keepers{$max_lineage}++;
+            }
+
+
+            while (my ($lineage, $node) = each %deletors) {
+                unless (exists $best_keepers{$lineage}) {
+                    print "trying to remove" . $lineage." " . $node->id."\n" if $debug;
+                    $node->parent()->removeChild($node->id);
+                }
+            }
+        }
+    }
+}
+
+
+
 # prune_keep_only_given
 # Given an array of node nodes, keep only nodes that are specified in the list
 sub prune_keep_only_given {
@@ -714,8 +970,8 @@ sub prune_keep_only_given {
             foreach my $keeper (@$hla_ids_ptr) {
                 #my $keeper_lineage = $keeper->lineage;
                 my $keeper_lineage = $keeper;
-        # Check if the node is in the list of specified nodes to keep
-        # do this by looping through and doing a regex on lineage
+                # Check if the node is in the list of specified nodes to keep
+                # do this by looping through and doing a regex on lineage
                 if ($keeper =~ /\Q$node_lineage/) {
                     # Here if an alignment is found to a top node, prune all non keeper edges
                     $keeper_hash{$node->lineage} = $node;
@@ -858,7 +1114,7 @@ sub node_exists {
 
 #    print STDERR "looking for @$hla_id_ptr in " . $current_node->lineage."\n";
     if (scalar @$hla_id_ptr) {
-        $childId = shift @$hla_id_ptr;
+        my $childId = shift @$hla_id_ptr;
         if (my $child = $current_node->getChild($childId)) {
             return($self->node_exists($child, $hla_id_ptr));
         }
@@ -879,7 +1135,7 @@ sub get_weight_by_hla_id {
 
 #    print STDERR "looking for @$hla_id_ptr in " . $current_node->lineage."\n";
     if (scalar @$hla_id_ptr) {
-        $childId = shift @$hla_id_ptr;
+        my $childId = shift @$hla_id_ptr;
         if (my $child = $current_node->getChild($childId)) {
             return($self->node_exists($child, $hla_id_ptr));
         }

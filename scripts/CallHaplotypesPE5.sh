@@ -30,5 +30,5 @@ bowtie -p $NUM_THREADS --sam --all $BOWTIE_INDEX -1 $FILTERED_PREFIX\_1 -2 $FILT
 
 $SCRIPT_PATH/build-forest.pl -reads $ALIGNED_PAIRS -o $FOREST_PAIRS -b $TREES_IN_FOREST $MAX_TREES_FLAG
 
-$SCRIPT_PATH/prune4.pl -threshold 0.05 -f `echo $TMP_DIR/*.forest | tr " " ","` > $OUT_DIR/haplotypes.txt
+$SCRIPT_PATH/prune5.pl -threshold 0.05 -f `echo $TMP_DIR/*.forest | tr " " ","` > $OUT_DIR/haplotypes.txt
 

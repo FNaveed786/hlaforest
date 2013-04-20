@@ -62,52 +62,96 @@ foreach my $tier (2..5) {
 #        print "Tier $tier\n";
 #        print_hash_ptr($pruned_weight_hash_ptr);
 
-
-
-## Old way of pruning
+        # Call haplotypes of selected
         foreach my $haplotype(@selected_haplotypes) {
-        # if the gene only has a single haplotype select two if it passes the threshold
-            if ($genes{gene_from_hla_id($haplotype)}==1) {
-#                print "Hey now, i only have one of this gene\n";
-                my $num_selected_haplotypes = 0;
+#            print "Looking for child of $haplotype\n";
+            foreach my $selected_haplotype (@sorted_haplotypes) {
+                if($selected_haplotype =~ /\Q$haplotype/) {
+                    push @tmp_selected_haplotypes, $selected_haplotype;
+                    last;
+                }
+            }
+        }
+
+        $pruned_weight_hash_ptr = prune(\@forest_files, \@tmp_selected_haplotypes, $tier, 0);
+        @sorted_haplotypes = @{sort_keys_desc($pruned_weight_hash_ptr)};
+        #       print "Tier $tier.5\n";
+        #print_hash_ptr($pruned_weight_hash_ptr);
+
+        # For all genes with only 1 haplotype, check if the pruned haplotype exceeds the threshold
+        foreach my $gene (keys %genes) {
+            if ($genes{$gene} == 1) {
+#                print "is $gene really 1? It is " .$genes{$gene}."\n";
                 my $first_haplotype;
                 foreach my $selected_haplotype (@sorted_haplotypes) {
-                    last if ($num_selected_haplotypes > 1);
-#                    print "is there a $haplotype in $selected_haplotype?\n";
-                    if($selected_haplotype =~ /\Q$haplotype/) {
-                        if ($first_haplotype) {
-                            if ($pruned_weight_hash_ptr->{$first_haplotype} / $pruned_weight_hash_ptr >{$selected_haplotype}) {
-#                                print "found one baby $selected_haplotype\n";
-                                push @tmp_selected_haplotypes, $selected_haplotype;
-                                $num_selected_haplotypes++;
-                            }
-                            else {
-                                last;
-                            }
+                    if($selected_haplotype =~ /\QROOT:$gene:/) {
+                        # If this the first haplotype
+                        unless ($first_haplotype) {
+                            $first_haplotype = $selected_haplotype;
                         }
                         else {
-                            $first_haplotype = $selected_haplotype;
-                            push @tmp_selected_haplotypes, $selected_haplotype;
-                            $num_selected_haplotypes++;
+                            my $ratio = $pruned_weight_hash_ptr->{$first_haplotype} / $pruned_weight_hash_ptr->{$selected_haplotype};
+                            if ($ratio > $threshold) {
+#                                print "Adding $selected_haplotype\n";
+                                push @tmp_selected_haplotypes, $selected_haplotype;
+                                last;
+                            }
+#                            else {
+#                                print "The ratio was $ratio and it did not pass the threshold $threshold\n";
+#                            }
                         }
                     }
                 }
             }
-            # Pick the child for each haplotype
-            elsif ($genes{gene_from_hla_id($haplotype)}==2) {
-                foreach my $selected_haplotype (@sorted_haplotypes) {
-                    if($selected_haplotype =~ /\Q$haplotype/) {
-                        push @tmp_selected_haplotypes, $selected_haplotype;
-                        last;
-                    }
-                }
-            }
-        else {
-            print "I'm not sure what to do here. I love lamp\n";
-            exit(0);
+
         }
-    }
-## End old way
+
+
+
+### Old way of pruning
+#        foreach my $haplotype(@selected_haplotypes) {
+#        # if the gene only has a single haplotype select two if it passes the threshold
+#            if ($genes{gene_from_hla_id($haplotype)}==1) {
+##                print "Hey now, i only have one of this gene\n";
+#                my $num_selected_haplotypes = 0;
+#                my $first_haplotype;
+#                foreach my $selected_haplotype (@sorted_haplotypes) {
+#                    last if ($num_selected_haplotypes > 1);
+##                    print "is there a $haplotype in $selected_haplotype?\n";
+#                    if($selected_haplotype =~ /\Q$haplotype/) {
+#                        if ($first_haplotype) {
+#                            if ($pruned_weight_hash_ptr->{$first_haplotype} / $pruned_weight_hash_ptr >{$selected_haplotype}) {
+##                                print "found one baby $selected_haplotype\n";
+#                                push @tmp_selected_haplotypes, $selected_haplotype;
+#                                $num_selected_haplotypes++;
+#                            }
+#                            else {
+#                                last;
+#                            }
+#                        }
+#                        else {
+#                            $first_haplotype = $selected_haplotype;
+#                            push @tmp_selected_haplotypes, $selected_haplotype;
+#                            $num_selected_haplotypes++;
+#                        }
+#                    }
+#                }
+#            }
+#            # Pick the child for each haplotype
+#            elsif ($genes{gene_from_hla_id($haplotype)}==2) {
+#                foreach my $selected_haplotype (@sorted_haplotypes) {
+#                    if($selected_haplotype =~ /\Q$haplotype/) {
+#                        push @tmp_selected_haplotypes, $selected_haplotype;
+#                        last;
+#                    }
+#                }
+#            }
+#        else {
+#            print "I'm not sure what to do here. I love lamp\n";
+#            exit(0);
+#        }
+#    }
+### End old way
 
 
 
