@@ -21,6 +21,7 @@ sub new {
     return $self;
 }
 
+# returns root node
 sub root {
     my $self=shift;
     return $self->{ROOT};
@@ -464,13 +465,21 @@ sub d3WeightJson {
     #print $currentNode->id;
     print $currentNode->lineage();
     print '"';
+
     if (@children) {
         print ',';
         print "\n";
         print '"children": [';
         print "\n";
+        my $counter = 0;
         foreach my $child (@children) {
             $self->d3WeightJson($child);
+            if(  $counter == $#children ) {
+            }
+            else {
+                print ",\n";
+            }
+            $counter++;
         }
         print ']';
         print "\n";
@@ -480,7 +489,7 @@ sub d3WeightJson {
         print "\n";
         print '"size":'.$currentNode->weight();
     }
-    print "},\n";
+    print "}\n";
 }
 
 

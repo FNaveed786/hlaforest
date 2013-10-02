@@ -102,6 +102,7 @@ elsif($d3_flag) {
     foreach my $hla_tree (@{$hla_forest_ptr}) {
         $tree->addTreeWeights($hla_tree);
     }
+    $tree->root()->tierTrim($tier);
 
     $tree->d3WeightJson($tree->root());
 }

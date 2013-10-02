@@ -20,6 +20,29 @@ sub new {
     return $self;
 }
 
+# Removes children below specified tier
+sub tierTrim {
+    my $self = shift;
+    my $tier = shift;
+    
+    if ($tier > 0) {
+        $tier--;
+        my @children;
+        my $children_ptr = $self->children;
+
+        if ($children_ptr) {
+            @children = @$children_ptr;
+            foreach my $child_ptr (@children) {
+                tierTrim($child_ptr, $tier);
+            }
+        }
+    }
+    else {
+        $self->{CHILDREN} = ();
+    }
+
+}
+
 # Given two hla nodes, adds the weight of children to self node
 sub addChildrenWeights {
     my $self = shift;
@@ -48,7 +71,7 @@ sub addChildrenWeights {
                 $new_child->weight($child_ptr->weight());
                 $new_child->parent($self);
                 $self->addChild($new_child);
-                
+
                 $new_child->addChildrenWeights($child_ptr);
             }
         }
