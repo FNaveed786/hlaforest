@@ -14,7 +14,7 @@ sub new {
 
     $self->{ROOT} = $root;
     $root->{ID}="ROOT";
-    
+
 
     bless ($self, $type);
 #    weaken($self->{ROOT});
@@ -52,7 +52,7 @@ sub addAlignNode {
     my $self = shift;
     my $alignment = shift;
     my ($templateLength, $imgtId, $hlaPtr) = _extractHLAfromDesc($alignment->rname);
-    
+
     $self->_insertAlignNode($alignment, $self->root, $hlaPtr);
 }
 
@@ -126,7 +126,7 @@ sub _distributeSMMQ {
     my $self = shift;
     my $currentNode = shift;
     my @childrenSMMQ;
-    
+
     my @children;
     my $children_ptr = $currentNode->children;
     if ($children_ptr) {
@@ -443,12 +443,46 @@ sub depthFirstSearchTest {
         @children = @$children_ptr;
     }
 
-
     print $currentNode->id."\n";
     foreach my $child (@children) {
         $self->depthFirstSearchTest($child);
     }
 }
+
+
+sub d3WeightJson {
+    my $self = shift;
+    my $currentNode = shift;
+    my @children;
+
+    my $children_ptr = $currentNode->children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
+
+    print '{"name": "';
+    #print $currentNode->id;
+    print $currentNode->lineage();
+    print '"';
+    if (@children) {
+        print ',';
+        print "\n";
+        print '"children": [';
+        print "\n";
+        foreach my $child (@children) {
+            $self->d3WeightJson($child);
+        }
+        print ']';
+        print "\n";
+    }
+    else {
+        print ',';
+        print "\n";
+        print '"size":'.$currentNode->weight();
+    }
+    print "},\n";
+}
+
 
 # depthFirstSearchTest
 sub depthFirstSearchTestSMMQ {

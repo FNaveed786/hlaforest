@@ -103,8 +103,7 @@ elsif($d3_flag) {
         $tree->addTreeWeights($hla_tree);
     }
 
-    #$tree->printNodeWeights();
-    $tree->depthFirstSearchTest($tree->root());
+    $tree->d3WeightJson($tree->root());
 }
 
 elsif ($R_flag) {
