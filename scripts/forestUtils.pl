@@ -16,11 +16,13 @@ my $tier = 1;
 my $out_forest;
 my $prune;
 my $gene_filter;
+my $d3_flag;
 
 GetOptions(
     "f=s"=>\$forestFile, 
     "t|tier:i"=>\$tier, 
     "circos"=>\$circos_flag, 
+    "d3_graph"=>\$d3_flag,
     "sum"=>\$sum_flag, 
     "unique_sum"=>\$uniq_sum_flag, 
     "o|out:s"=>\$out_forest, 
@@ -92,6 +94,17 @@ if ($circos_flag) {
         }
         print "\n";
     }
+}
+
+elsif($d3_flag) {
+    my $tree = HLATree->new();
+
+    foreach my $hla_tree (@{$hla_forest_ptr}) {
+        $tree->addTreeWeights($hla_tree);
+    }
+
+    #$tree->printNodeWeights();
+    $tree->depthFirstSearchTest($tree->root());
 }
 
 elsif ($R_flag) {

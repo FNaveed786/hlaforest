@@ -26,6 +26,14 @@ sub root {
     return $self->{ROOT};
 }
 
+# Add the weights of a specified tree to the current tree
+sub addTreeWeights {
+    my $self = shift;
+    my $tree = shift;
+
+    $self->root()->addChildrenWeights($tree->root());
+}
+
 sub buildTreeFromAlignmentSet {
     my $self = shift;
     my $alignmentsPtr = shift;
@@ -428,7 +436,13 @@ sub _addCoverage {
 sub depthFirstSearchTest {
     my $self = shift;
     my $currentNode = shift;
-    my @children = @{$currentNode->children};
+    my @children;
+
+    my $children_ptr = $currentNode->children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
+
 
     print $currentNode->id."\n";
     foreach my $child (@children) {

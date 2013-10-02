@@ -20,6 +20,38 @@ sub new {
     return $self;
 }
 
+# Given two hla nodes, adds the weight of children to self node
+sub addChildrenWeights {
+    $self = shift;
+    $add_node = shift;
+    my @children;
+
+    my $children_ptr = $add_node->children;
+    if ($children_ptr) {
+        @children = @$children_ptr;
+    }
+
+    # for each child of the specified tree's root node
+    foreach my $child_ptr (@children) {
+        print $child_ptr->id();
+        print "\n";
+
+        my $this_child = $self->getChild($child_ptr->id());
+        if($this_child) {
+            my $weight= $this_child->weight() + $child_ptr->weight();
+            $this_child->weight($weight);
+            $this_child->addChildrenWeights($child_ptr);
+        }
+        else {
+            my $new_child = HLANode->new();
+            $new_child->id($child_ptr->id());
+            $new_child->weight($child_ptr->weight());
+            $self->addChild($new_child);
+            $new_child->addChildrenWeights($child_ptr);
+        }
+    }
+}
+
 # Takes in refname (and optionally new smmq value) and returns the smmq value associated
 # with the sequence at that node
 sub smmq {
@@ -224,7 +256,7 @@ sub addCoverage {
     else { 
         my $debugPtr = $self->getCoverage($coverageName);
         die "Error in HLANode.pm addCoverage: addCoverage called on a node that has not been initialized\n";
-        }
+    }
 }
 
 sub getCoverage {

@@ -5,7 +5,7 @@ HLAFOREST_HOME=/home/hyjkim/hla/hlaforest
 SCRIPT_PATH=$HLAFOREST_HOME/scripts # installation directory of your scripts
 BOWTIE_INDEXES=$HLAFOREST_HOME/reference # path to bowtie references directory
 NUM_THREADS=1 # the number of threads bowtie should use
-TREES_IN_FOREST=10000 # the number of trees to output in each forest file
+TREES_IN_FOREST=50000 # the number of trees to output in each forest file
 MAX_TREES=100000000
 
 if [ "$MAX_TREES" ]; then
