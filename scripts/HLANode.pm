@@ -141,7 +141,7 @@ sub getSMMQSum {
     my $minSMMQ;
     if (scalar(@alignments) > 2) {
         print STDERR "An alignment should not align to the same reference sequence twice\n";
-        exit(0);
+        #exit(0);
     }
     if (scalar(@alignments)) {
         my $SMMQ_sum = 0;
